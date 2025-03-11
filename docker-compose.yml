@@ -1,0 +1,206 @@
+version: '3.8'
+services:
+
+  # ***********************************************
+  # ****** IMAGENES BACKEND: microservice ******
+  # ***********************************************
+# Base de datos PostgreSQL (con inicialización, si es necesario)
+  db:
+    image: postgres:14
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    container_name: postgres-multidb
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ./db-init-scripts:/docker-entrypoint-initdb.d
+      # Volumen para persistencia (opcional)
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    ports:
+      - "5432:5432"
+    networks:
+      - teammaker-network
+
+  # API Gateway (si lo tienes)
+  api-gateway:
+    image: acadenas/api-gateway:v1.0
+    container_name: api-gateway
+    ports:
+      - "3000:3000"
+    depends_on:
+      - user-microservice
+      - course-microservice
+      - survey-microservice
+      - group-microservice
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - USER_MS_URL=http://user-ms:3001
+      - COURSE_MS_URL=http://course-ms:3002
+      - GROUP_MS_URL=http://group-ms:3003
+      - SURVEY_MS_URL=http://survey-ms:3004
+    networks:
+      - teammaker-network
+
+  # User Microservice
+  user-microservice:
+    image: acadenas/user-microservice:v1.0
+    container_name: user-ms
+    ports:
+      - "3001:3001"
+    depends_on:
+      - db
+    restart: always
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_DATABASE=user_db
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_SECURE=false
+      - SMTP_USER=ayudateammaker@gmail.com
+      - SMTP_PASS=ilfe vmyd hbwg xpqj
+      - SMTP_FROM=ayudateammaker@gmail.com
+    networks:
+      - teammaker-network
+
+
+  # Course Microservice (nuevo, puerto 3002)
+  course-microservice:
+    image: acadenas/course-microservice:v1.0
+    container_name: course-ms
+    ports:
+      - "3002:3002"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_DATABASE=course_db
+    networks:
+      - teammaker-network
+
+  # Survey Microservice
+  survey-microservice:
+    image: acadenas/survey-microservice:v1.0
+    container_name: survey-ms
+    ports:
+      - "3004:3004"
+    depends_on:
+      - db
+    restart: always
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - DB_DATABASE=survey_db
+    networks:
+      - teammaker-network
+
+  # Group Microservice (FastAPI)
+  group-microservice:
+    image: acadenas/group-microservice:v1.0
+    container_name: group-ms
+    ports:
+      - "3003:3003"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=group_db
+    networks:
+      - teammaker-network
+      
+  # ***********************************************
+  # ****** IMAGENES FRONTEND: microfrontend ******
+  # ***********************************************
+
+  host-microfrontend:
+    image: acadenas/host-microfrontend:v1.0
+    container_name: host-mf
+    ports:
+      - 3010:3010
+    restart: always
+    depends_on:
+      - api-gateway
+    networks:
+      - teammaker-network
+
+  login-microfrontend:
+    image: acadenas/login-microfrontend:v1.0
+    container_name: login-mf
+    ports:
+      - 3011:3011
+    restart: always
+    depends_on:
+      - api-gateway
+    networks:
+      - teammaker-network
+
+  home-microfrontend:
+    image: acadenas/home-microfrontend:v1.0
+    container_name: home-mf
+    ports:
+      - 3012:3012
+    restart: always
+    depends_on:
+      - api-gateway
+    networks:
+      - teammaker-network
+
+  users-microfrontend:
+    image: acadenas/users-microfrontend:v1.0
+    container_name: users-mf
+    ports:
+      - 3013:3013
+    restart: always
+    depends_on:
+      - api-gateway
+    networks:
+      - teammaker-network
+
+  courses-microfrontend:
+    image: acadenas/courses-microfrontend:v1.0
+    container_name: courses-mf
+    ports:
+      - 3014:3014
+    restart: always
+    depends_on:
+      - api-gateway
+    networks:
+      - teammaker-network
+  
+  surveys-microfrontend:
+    image: acadenas/surveys-microfrontend:v1.0
+    container_name: surveys-mf
+    ports:
+      - 3015:3015
+    restart: always
+    depends_on:
+      - api-gateway
+    networks:
+      - teammaker-network
+
+volumes:
+  postgres_data:
+    name: teammaker-postgres-data
+
+networks:
+  teammaker-network:
