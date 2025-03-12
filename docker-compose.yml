@@ -28,7 +28,7 @@ services:
 
   # API Gateway (si lo tienes)
   api-gateway:
-    image: acadenas/api-gateway:v1.1
+    image: acadenas/api-gateway:v1.0
     container_name: api-gateway
     ports:
       - "3000:3000"
@@ -49,7 +49,7 @@ services:
 
   # User Microservice
   user-microservice:
-    image: acadenas/user-microservice:v1.1
+    image: acadenas/user-microservice:v1.0
     container_name: user-ms
     ports:
       - "3001:3001"
@@ -74,7 +74,7 @@ services:
 
   # Course Microservice (nuevo, puerto 3002)
   course-microservice:
-    image: acadenas/course-microservice:v1.1
+    image: acadenas/course-microservice:v1.0
     container_name: course-ms
     ports:
       - "3002:3002"
@@ -93,7 +93,7 @@ services:
 
   # Survey Microservice
   survey-microservice:
-    image: acadenas/survey-microservice:v1.1
+    image: acadenas/survey-microservice:v1.0
     container_name: survey-ms
     ports:
       - "3004:3004"
@@ -111,7 +111,7 @@ services:
 
   # Group Microservice (FastAPI)
   group-microservice:
-    image: acadenas/group-microservice:v1.1
+    image: acadenas/group-microservice:v1.0
     container_name: group-ms
     ports:
       - "3003:3003"
